@@ -6,6 +6,6 @@ wiki_kb_menu_placeholder = 'Выберите пункт меню...'
 wiki_kb_menu_text = 'Выберите пункт меню'
 
 wiki_subscribe_btn_text = 'Подписаться'
-wiki_url_tg = 'https://t.me/accentmediacom'
+wiki_url_tg = 'https://t.me/brainform'
 
-wiki_start_message = 'Привет! МЫЯ боТ'
+wiki_start_message = 'Привет!'

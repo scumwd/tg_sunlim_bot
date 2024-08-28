@@ -68,9 +68,11 @@ async def remove_role(nickname):
 ##########################################
 
 # Получить дежурных пользователей
-async def get_dutyes():  
+async def get_dutyes():
     async with AsyncSession() as session:
-        return await session.scalars(select(User).where(User.is_duty == True))
+        result = await session.scalars(select(User).where(User.is_duty == True))
+        dutys = result.all() 
+        return dutys
     
 async def remove_duty(tg_id):
     async with AsyncSession() as session:
@@ -125,7 +127,9 @@ async def get_question_by_id(question_id):
     
 async def get_wait_questions():
     async with AsyncSession() as session:
-        return await session.scalars(select(Question).where(Question.is_processed==False))
+        result = await session.scalars(select(Question).where(Question.is_processed==False, Question.is_spam == False))
+        questions = result.all()
+        return questions
 
 # Пометить вопрос как обработанный и сохранить ответ    
 async def mark_question_as_processed(question_id: int, admin_username: str, answer_text: str):

@@ -46,41 +46,63 @@ admin_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     ],
     [
         InlineKeyboardButton(
-            text='Список дежурных',
-            callback_data='duty_list_btn'
+            text='Управление дежурными',
+            callback_data='manage_duty'
         )
     ],
     [
         InlineKeyboardButton(
-            text='Добавить дежурного',
-            callback_data='add_duty_btn'
-        ),
-        InlineKeyboardButton(
-            text='Удалить дежурного',
-            callback_data='remove_duty_menu'
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            text='Список админов',
-            callback_data='admin_list_btn'
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            text='Добавить админа',
-            callback_data='add_admin_btn'
-        ),
-        InlineKeyboardButton(
-            text='Удалить админа',
-            callback_data='remove_admin_btn'
+            text='Управление администраторами',
+            callback_data='manage_admin'
         )
     ]
 ])
 
+duty_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(
+            text='Ожидают ответа*',
+            callback_data='question_list_btn'
+        )
+    ]
+])
+
+def create_duty_submenu() -> InlineKeyboardMarkup:
+    submenu = InlineKeyboardMarkup (inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text='Список дежурных',
+                callback_data='duty_list_btn'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text='Добавить дежурного',
+                callback_data='add_duty_btn'
+            ),
+            InlineKeyboardButton(
+                text='Удалить дежурного',
+                callback_data='remove_duty_menu'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text='Назад',
+                callback_data='back_to_main_menu'
+            )
+        ]
+    ])
+    return submenu
+
 # Подменю для работы с администраторами
 def create_admin_submenu() -> InlineKeyboardMarkup:
     submenu = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text='Список админов',
+                callback_data='admin_list_btn'
+            )
+        ],
         [
             InlineKeyboardButton(
                 text='Добавить админа',
@@ -98,5 +120,5 @@ def create_admin_submenu() -> InlineKeyboardMarkup:
             )
         ]
     ])
-    
+
     return submenu

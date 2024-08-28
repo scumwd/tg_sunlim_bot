@@ -10,6 +10,8 @@ from app.database.requests import (get_user, set_role,
                                    add_duty)
 from aiogram.fsm.context import FSMContext
 
+import re
+
 from app.states import NewsLetter, QuestionStates, DutyAdd
 from config import Role
 from main import bot
@@ -22,6 +24,11 @@ class Admin(Filter):
     async def __call__(self, message: Message):
         user = await get_user(message.from_user.id)
         return user.role == Role.admin
+
+class AdminOrDuty(Filter):
+    async def __call__(self, message: Message):
+        user = await get_user(message.from_user.id)
+        return user.role == Role.admin or user.is_duty == True
     
 @adminRouter.message(Admin(), Command('admin_menu'))
 async def show_admin_menu(message: Message):
@@ -33,7 +40,7 @@ async def question_list_clicked(callback: CallbackQuery):
     await callback.answer('Ждут ответа')
     await show_question_list(callback.message)
 
-@adminRouter.message(Admin(), Command('question_list'))
+@adminRouter.message(AdminOrDuty(), Command('question_list'))
 async def question_list_command(message: Message):
     await message.answer('Ждут ответа')
     await show_question_list(message)
@@ -41,11 +48,12 @@ async def question_list_command(message: Message):
 @adminRouter.callback_query(F.data == "duty_list_btn")
 async def duty_list_clicked(callback: CallbackQuery):
     await callback.answer('')
+    await callback.message.answer('Список дежурных')
     await show_duty_list(callback.message)
 
 @adminRouter.message(Admin(), Command('duty_list'))
 async def duty_list_command(message: Message):
-    await message.answer('')
+    await message.answer('Список дежурных')
     await show_duty_list(message)
 
 @adminRouter.callback_query(F.data.startswith("remove_duty_btn:"))
@@ -58,8 +66,7 @@ async def remove_duty_clicked(callback: CallbackQuery):
 
 async def show_duty_list(message: Message):
     dutys = await get_dutyes()
-    if len(dutys.all()) > 0:
-        await message.answer('Список дежурных')
+    if len(dutys) > 0:
         for duty in dutys:
             try:
                await message.answer(f"Дежурный @{duty.username}", reply_markup=kb.create_delete_duty_btn(duty_id=duty.tg_id))
@@ -78,17 +85,33 @@ async def add_duty_clicked(callback: CallbackQuery, state: FSMContext):
 @adminRouter.message(DutyAdd.username)
 async def news_message(message: Message, state: FSMContext):
     await state.clear()
-    new_duty_username = message.text.split()[1].lstrip('@')
-    message_text = add_duty(new_duty_username)
+
+    message_text = message.text.strip()
+    parts = message_text.split()
+
+    if len(parts) > 1:
+        await message.answer("Пожалуйста, введите имя пользователя.")
+        return
+
+    new_duty_username = parts[0].lstrip('@')
+
+    if not re.match(r'^[A-Za-z0-9_]{5,32}$', new_duty_username):
+        await message.answer("Некорректное имя пользователя. Имя пользователя должно содержать от 5 до 32 символов и может состоять только из букв, цифр и символа '_'.")
+        return
+
+    message_text = await add_duty(new_duty_username)
     await message.answer(message_text)
     
 async def show_question_list(message: Message):
     questions = await get_wait_questions()
-    for question in questions:
-        try:
-            await message.answer(f"Вопрос #{question.id} от @{question.tg_username_user}: {question.text_question}",  reply_markup=kb.create_answer_question_keyboard(question.id))
-        except Exception as e:
-            print(e)
+    if len(questions)>0:
+        for question in questions:
+            try:
+                await message.answer(f"Вопрос #{question.id} от @{question.tg_username_user}: {question.text_question}",  reply_markup=kb.create_answer_question_keyboard(question.id))
+            except Exception as e:
+                print(e)
+    else:
+        await message.answer('Список вопросов пуст')
            
 @adminRouter.message(Admin(), Command('news'))
 async def news(message: Message, state: FSMContext):
@@ -112,11 +135,18 @@ async def news_message(message: Message, state: FSMContext):
 
 @adminRouter.message(Admin(), Command(commands=["add_admin"]))
 async def add_admin(message: Message):
-        new_admin_username = message.text.split()[1].lstrip('@')
-        if (await set_role(Role.admin, new_admin_username)):
-            await message.answer(f"Пользователь @{new_admin_username} был добавлен как администратор.")
-        else:
-            await message.answer(f"Пользователь @{new_admin_username} не был найден.")
+    await add_admin(message)
+
+@adminRouter.callback_query(F.data == "add_admin_btn")
+async def add_admin_clicked(callback: CallbackQuery):
+    await add_admin(callback.message)
+
+async def add_admin(message: Message):
+    new_admin_username = message.text.split()[1].lstrip('@')
+    if (await set_role(Role.admin, new_admin_username)):
+        await message.answer(f"Пользователь @{new_admin_username} был добавлен как администратор.")
+    else:
+        await message.answer(f"Пользователь @{new_admin_username} не был найден.")
 
 @adminRouter.message(Admin(), Command(commands=["add_admin"]))
 async def remove_admin(message: Message):
@@ -162,9 +192,7 @@ async def process_admin_answer(message: Message, state: FSMContext):
         await mark_question_as_processed(question_id, message.from_user.username, message.text)
         await message.answer("Ответ был отправлен пользователю.")
     await state.clear()
-    
 
-    # Отправляем ответ пользователю
     question = await get_question_by_id(question_id)
     await bot.send_message(chat_id=question.tg_id_user, text=message.text, reply_to_message_id=question.id_message)
 
@@ -173,14 +201,21 @@ async def mark_question_spam(callback_query: CallbackQuery, state: FSMContext):
     question_id = int(callback_query.data.split(":")[1])
     
     await mark_as_spam(question_id)
-    await callback_query.answer('')
-    await callback_query.message.answer('Сообщение помечено как спам.')
+    await callback_query.answer('Сообщение перемещено в спам.')
+    await callback_query.message.delete()
     await state.clear()
 
-# Новый обработчик для кнопки "Список админов"
-@adminRouter.callback_query(F.data == 'admin_list_btn')
+# Обработчик для кнопки управление администраторами
+@adminRouter.callback_query(F.data == 'manage_admin')
 async def show_admin_submenu(callback: CallbackQuery):
+    await callback.message.edit_text('Управление администраторами')
     await callback.message.edit_reply_markup(reply_markup=kb.create_admin_submenu())
+
+# Обработчик для кнопки управление дежурными
+@adminRouter.callback_query(F.data == 'manage_duty')
+async def show_admin_submenu(callback: CallbackQuery):
+    await callback.message.edit_text('Управление дежурными')
+    await callback.message.edit_reply_markup(reply_markup=kb.create_duty_submenu())
 
 # Новый обработчик для кнопки "Назад"
 @adminRouter.callback_query(F.data == 'back_to_main_menu')
