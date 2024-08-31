@@ -1,7 +1,6 @@
 /config.py
 
-__pycache__/
-app/__pycache__/
+**/__pycache__/
 
 .venv/pyvenv.cfg
 .venv/Include/

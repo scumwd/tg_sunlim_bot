@@ -30,6 +30,13 @@ async def get_user(tg_id):
 async def get_users():  
     async with AsyncSession() as session:
         return await session.scalars(select(User))
+    
+# Получить всех админов   
+async def get_admins():  
+    async with AsyncSession() as session:
+        result = await session.scalars(select(User).where(User.role==Role.admin))
+        admins = result.all()
+        return admins
 
 # Удалить конкретного пользователя
 async def remove_user(tg_id):  
@@ -62,6 +69,7 @@ async def remove_role(nickname):
             await session.execute(stmt)
 
         await session.commit()
+        return True
 
 ##########################################
 #                Question
@@ -78,6 +86,12 @@ async def remove_duty(tg_id):
     async with AsyncSession() as session:
         async with session.begin():
             await session.execute(update(User).where(User.tg_id == tg_id).values(is_duty = False))
+            await session.commit()
+
+async def remove_duty_by_username(username):
+    async with AsyncSession() as session:
+        async with session.begin():
+            await session.execute(update(User).where(User.username == username).values(is_duty = False))
             await session.commit()
 
 async def add_duty(username):

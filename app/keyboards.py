@@ -1,8 +1,7 @@
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardButton, InlineKeyboardButton
-from app.wiki import wiki_kb_question, wiki_kb_subscribe, wiki_kb_menu_placeholder, wiki_subscribe_btn_text, wiki_url_tg, wiki_kb_answer_question
+from app.wiki import wiki_kb_question, wiki_kb_menu_placeholder, wiki_subscribe_btn_text, wiki_url_tg, wiki_kb_answer_question
 
-keyboardList = [[KeyboardButton(text=wiki_kb_subscribe), 
-                KeyboardButton(text=wiki_kb_question)]]
+keyboardList = [[ KeyboardButton(text=wiki_kb_question)]]
 
 main = ReplyKeyboardMarkup(keyboard=keyboardList, resize_keyboard=True, input_field_placeholder=wiki_kb_menu_placeholder)
 
@@ -63,7 +62,13 @@ duty_menu = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(
             text='Ожидают ответа*',
             callback_data='question_list_btn'
-        )
+        ) 
+    ],
+    [
+        InlineKeyboardButton(
+                text='Список дежурных',
+                callback_data='duty_list_btn'
+            )
     ]
 ])
 
@@ -93,6 +98,16 @@ def create_duty_submenu() -> InlineKeyboardMarkup:
         ]
     ])
     return submenu
+
+def create_delete_admin_btn(username) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text='Удалить админа',
+                callback_data=f'remove_admin_btn:{username}'
+            )
+        ]
+    ])
 
 # Подменю для работы с администраторами
 def create_admin_submenu() -> InlineKeyboardMarkup:

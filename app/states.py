@@ -9,3 +9,12 @@ class QuestionStates(StatesGroup):
 
 class DutyAdd(StatesGroup):
     username = State()
+
+class DutyRemove(StatesGroup):
+    username = State()
+
+class AdminRemove(StatesGroup):
+    username = State()
+
+class AdminAdd(StatesGroup):
+    username = State()
