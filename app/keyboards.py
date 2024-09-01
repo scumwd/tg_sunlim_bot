@@ -9,6 +9,8 @@ subscribe_btn = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text
 
 cancel_question = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Отменить", callback_data='cancel_question')]])
 
+cancel_ask = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Отменить", callback_data='cancel_ask')]])
+
 def create_answer_question_keyboard(question_id: int) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
